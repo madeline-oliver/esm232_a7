@@ -1,0 +1,16 @@
+---
+title: "ESM 232 Assignment 7"
+author: "Madeline Oliver, Alex Ehrens, Siya Qiu"
+date: "5/12/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Rabbits and Hawks Population Matrix Assignment
+
+
+A small city with a large urban park has decided to introduce a rare species of rabbits into this park - Rabbits are cute and the kids love them, and giving a rare species a new home sounds like a good idea. The urban park manager is concerned about how this rabbit population might grow over the next few decades. Rabbits have no natural predators in the region where the park is situated. The manager would like to know, approximately, how many rabbits there will be 20 years from now if the rabbits are introduced as planned. The manager reviewed the literature and found the following estimates for survival and fertility rates for the rare rabbit population, for 4 different age classes. The estimates for these rates are shown below
+
