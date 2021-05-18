@@ -8,21 +8,13 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(sensitivity)
 ```
 
 # Rabbits and Hawks Population Matrix Assignment
 
 
-A small city with a large urban park has decided to introduce a rare species of rabbits into this park - Rabbits are cute and the kids love them, and giving a rare species a new home sounds like a good idea. The urban park manager is concerned about how this rabbit population might grow over the next few decades. Rabbits have no natural predators in the region where the park is situated. The manager would like to know, approximately, how many rabbits there will be 20 years from now if the rabbits are introduced as planned. The manager reviewed the literature and found the following estimates for survival and fertility rates for the rare rabbit population, for 4 different age classes. The estimates for these rates are shown below
-
-# Multiple Time Steps
-
-use function to evolve a population through time
- * inputs = survivability, fertility, initial population, time steps
- * output = final population matrix
- * a dynamic model - difference equations - similar to our diffusion model
- 
-```{r multitime}
+```{r}
 
 source("evolve_pop2.R")
 
@@ -47,55 +39,19 @@ rabbit_pop=evolve_pop2(fert_rabbits, surv_rabbits, ini, nyears)
 
 head(rabbit_pop)
 
-# graph different components of the output
-# total population
-
-# add decade 
-#decade = seq(from=1, to=ndecades)
-#china_tot = cbind.data.frame(decade=decade, poptot=china_pop$poptot)
-#ggplot(china_tot, aes(decade, poptot))+geom_col()+labs(y="Total Popultation")
-
-# plot information about ages
-#china_ages = cbind.data.frame(decade=decade, t(china_pop$popbyage))
-#china_agesl = china_ages %>% gather(key="agecat", value="pop",-decade)
-#ggplot(china_agesl, aes(decade, pop, fill=agecat))+geom_col()+labs(y="Population", fill="Age Group")
-
 ```
  
-### Result:
+### Matrix population model result:
 
 After 20 years and an initial population of 10 adult (age 2-3) rabbits, there are about 36,452 rabbits in the total population, with about 18,372 rabbits in the young (0-1) age class.
 
 ### Sobel sensitivity analysis
 
-Now lets use Sobel to explore how our intervention might impact the population...
+We use Sobel to explore how the intervention of encouraging nesting of hawks that eat rabbits might impact the rabbit population. We also account for uncertainty in our survivability parameters.
 
-AND account for uncertainty in some of our parameters
-
-Reminder
-Sobel sensitivity analysis Breaks variance of output into 
-
-* variance associated directly with parameter alone (fraction associated with each parameter, sum to 1)
-* variance associated with parameter and interaction with other parameters (sum can be more than 1)
-
-Steps
-
-* run sobel to get parameter sets in a sensitivity analysis object
-* run model with those parameter sets
-* tell the senstivity object about results associated with each parameter set
-* look at sensitivity analysis metric from sobel
 ```{r sobel}
-
-library(sensitivity)
-
-
 # survivability 
 nsample=200
-
-#p01 = 0.8
-#p12 = 0.85
-#p23 = 0.65
-#p34 = 0.1
 
 # create our two samples for Sobel
 # first do our survivability
@@ -151,7 +107,7 @@ ggplot(data.frame(finalpop=res),
        aes(x=finalpop))+
   geom_density()
 
-# or a boxplot
+# boxplot of variation in total rabbit population
 ggplot(data.frame(finalpop=res), 
        aes(x="", y=finalpop) )+
   geom_boxplot(fill="blue")+
@@ -161,18 +117,42 @@ ggplot(data.frame(finalpop=res),
 # give our results to sensitivity structure
 sens_rabbit=tell(sens_rabbit, res)
 
-# loot at results
+# look at results
 sens_rabbit$S
 sens_rabbit$T
 
-# graph the most sensitive parameter
+# Graph how total rabbit population after 20 years varies with survivability of young age and sub-adult
 tmp = cbind.data.frame(sens_rabbit$X, 
                        pop12=sens_rabbit$y)
 
+# plot of total rabbit population vs. survivability of young
+ggplot(tmp, aes(p01, pop12))+
+  geom_point()+
+  labs(x="Survivability of young",
+       y="Population after 20 years")
+
+# plot of total rabbit population vs. survivability of sub-adult
 ggplot(tmp, aes(p12, pop12))+
   geom_point()+
-  labs(x="Survivability of 1 to older",
-       y="pop after 20 years")
+  labs(x="Survivability of sub-adults",
+       y="Population after 20 years")
+
+# total population after 20 years
+#total populations at each sensitivity level
+
+head(res)
+
+#p01
+tmp_p01 <- tmp %>%
+  mutate(p01 = round(p01, digits = 2)) %>% 
+  group_by(p01) %>% 
+  summarise(pop = mean(pop12))
+#p12
+tmp_p12 <- tmp %>%
+  mutate(p12 = round(p12, digits = 2)) %>% 
+  group_by(p12) %>% 
+  summarise(pop = mean(pop12))
+
 ```
 
-
+When we include the hawk intervention in our population model and account for uncertainty in survivability rates, our population after 20 years 
