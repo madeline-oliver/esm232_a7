@@ -24,7 +24,7 @@ use function to evolve a population through time
  
 ```{r multitime}
 
-source("evolve_pop.R")
+source("evolve_pop2.R")
 
 # fertility rates
 f1 = 0.0
@@ -43,7 +43,7 @@ ini = c(0,0,10,0)
 ndecades = 2
 fert_rabbits = c(f1,f2,f3,f4)
 surv_rabbits = c(p01,p12,p23,p34)
-rabbit_pop=evolve_pop(fert_rabbits, surv_rabbits, ini, ndecades)
+rabbit_pop=evolve_pop2(fert_rabbits, surv_rabbits, ini, ndecades)
 
 head(rabbit_pop)
 
@@ -91,14 +91,14 @@ library(sensitivity)
 # survivability 
 nsample=200
 
-p01 = 0.8
-p12 = 0.85
-p23 = 0.65
-p34 = 0.1
+#p01 = 0.8
+#p12 = 0.85
+#p23 = 0.65
+#p34 = 0.1
 
 # create our two samples for Sobel
 # first do our survivability
-ps1 = cbind.data.frame(p01=runif(min=0.65, max=0.75, n=nsample), 
+ps1 = cbind.data.frame(p01 = runif(min=0.65, max=0.75, n=nsample), 
                        p12 = runif(min=0.75, max=0.8, n=nsample),
                        p23 = runif(min=0.65, max=0.65, n=nsample),
                        p34 = runif(min=0.1, max=0.1, n=nsample))
@@ -108,6 +108,7 @@ ps2 = cbind.data.frame(p01=runif(min=0.65, max=0.75, n=nsample),
                        p23 = runif(min=0.65, max=0.65, n=nsample),
                        p34 = runif(min=0.1, max=0.1, n=nsample))
 
+# then fertility
 fs1 = cbind.data.frame(f1=0, 
                        f2 = 1,
                        f3 = 3,
@@ -128,22 +129,24 @@ nsim=nrow(sens_rabbit$X)
 # this is already output by evolve_pop so we don't need a compute_metric function
 
 ini = c(0,0,10,0)
-ndecades= 2
+ndecades= c(2)
 
 # as before combine our application of the the dynamics model - for each
 # parameter set, with code to extract our metric of interest (final population)
 p_wrapper = function(p01, p12, p23, p34, f1,f2,f3,f4,use_func, initialpop, nstep ) {
-fertility=c(f1,f2,f3,f4)
-survivability= c(p01,p12,p23,p34)
-res = use_func(survivability =survivability, fertility = fertility, initialpop=initialpop, nstep=nstep)
+  fertility=c(f1,f2,f3,f4)
+  survivability= c(p01,p12,p23,p34)
+  res = use_func(survivability =survivability, fertility = fertility, initialpop=initialpop, nstep=nstep)
 # now return the final population total
-return(finalpop=res$poptot[nstep])
+  return(finalpop=res$poptot[nstep])
 }
 
 # use pmap here so we can specify rows of our sensitivity analysis parameter object 
 res = as.data.frame(sens_rabbit$X) %>% 
-  pmap_dbl(p_wrapper, initialpop=ini, nstep=ndecades, use_func=evolve_pop)
+  pmap_dbl(p_wrapper, initialpop=ini, nstep=ndecades, use_func=evolve_pop2)
          
+view(res) 
+
 # plot results (variation in final population across all parameter)
 # ggplot needs a dataframe - so do a quick conversion with data.frame
 ggplot(data.frame(finalpop=res), 
