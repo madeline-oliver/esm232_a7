@@ -9,7 +9,6 @@
 
 evolve_pop2 = function(fertility, survivability, initialpop, nstep) {
   
-  
   nclasses = length(fertility)
   
   # make sure inputs are in the right format

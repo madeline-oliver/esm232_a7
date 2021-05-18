@@ -27,7 +27,7 @@ use function to evolve a population through time
 source("evolve_pop2.R")
 
 # fertility rates
-f1 = 0.0
+f1 = 0
 f2 = 2/2 # have to divide by two because only women are fertile
 f3 = 6/2
 f4 = 1/2
@@ -40,10 +40,10 @@ p34 = 0.1
 
 # initial population parameters
 ini = c(0,0,10,0) 
-ndecades = 2
+nyears = 20
 fert_rabbits = c(f1,f2,f3,f4)
 surv_rabbits = c(p01,p12,p23,p34)
-rabbit_pop=evolve_pop2(fert_rabbits, surv_rabbits, ini, ndecades)
+rabbit_pop=evolve_pop2(fert_rabbits, surv_rabbits, ini, nyears)
 
 head(rabbit_pop)
 
@@ -64,7 +64,7 @@ head(rabbit_pop)
  
 ### Result:
 
-After 20 years and an initial population of 10 adult (age 2-3) rabbits, there are 36.5 rabbits in the total population, with 30 rabbits in the young (0-1) age class.
+After 20 years and an initial population of 10 adult (age 2-3) rabbits, there are about 36,452 rabbits in the total population, with about 18,372 rabbits in the young (0-1) age class.
 
 ### Sobel sensitivity analysis
 
@@ -88,6 +88,7 @@ Steps
 
 library(sensitivity)
 
+
 # survivability 
 nsample=200
 
@@ -109,11 +110,10 @@ ps2 = cbind.data.frame(p01=runif(min=0.65, max=0.75, n=nsample),
                        p34 = runif(min=0.1, max=0.1, n=nsample))
 
 # then fertility
-fs1 = cbind.data.frame(f1=0, 
+fs1 = cbind.data.frame(f1 = 0, 
                        f2 = 1,
                        f3 = 3,
-                       f4 = 3)
-
+                       f4 = 0.5)
 
 # put survivability and fertility together
 allp1 = cbind.data.frame(ps1,fs1)
@@ -129,7 +129,7 @@ nsim=nrow(sens_rabbit$X)
 # this is already output by evolve_pop so we don't need a compute_metric function
 
 ini = c(0,0,10,0)
-ndecades= c(2)
+nyears=20
 
 # as before combine our application of the the dynamics model - for each
 # parameter set, with code to extract our metric of interest (final population)
@@ -143,9 +143,7 @@ p_wrapper = function(p01, p12, p23, p34, f1,f2,f3,f4,use_func, initialpop, nstep
 
 # use pmap here so we can specify rows of our sensitivity analysis parameter object 
 res = as.data.frame(sens_rabbit$X) %>% 
-  pmap_dbl(p_wrapper, initialpop=ini, nstep=ndecades, use_func=evolve_pop2)
-         
-view(res) 
+  pmap_dbl(p_wrapper, initialpop=ini, nstep=nyears, use_func=evolve_pop2)
 
 # plot results (variation in final population across all parameter)
 # ggplot needs a dataframe - so do a quick conversion with data.frame
