@@ -1,0 +1,166 @@
+---
+title: "rabbits"
+date: "5/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+source("evolve_pop2.R")
+
+
+# set up best guess case
+# survivability - based on mortality rates per thousand per decade
+p12 = 0.8
+p23 = 0.85
+p34 = 0.65
+p45 = 0.1
+
+F1 = 0
+F2 = 2
+F3 = 6
+F4 = 1
+
+# initial population parameters
+ini = c(0,0,10,0)
+nyears = 20
+fert_rabbit = c(F1,F2,F3,F4)
+surv_rabbit = c(p12,p23,p34,p45)
+rabbit_pop=evolve_pop2(fert_rabbit, surv_rabbit, ini, nyears)
+
+# population after 20 years
+pop20 = rabbit_pop$poptot[20]
+```
+
+#### Q1:What is the total rabbit population after 20 years.
+
+**ANS: population after 20 years is `r pop20`**
+
+<br>
+<br>
+
+```{r}
+year = seq(from=1, to=nyears)
+rabbit_ages = cbind.data.frame(year=year, t(rabbit_pop$popbyage))
+young20 = rabbit_ages[20,2]
+```
+
+#### Q2: How many young rabbits (first age class) are there in the population at that time?
+
+**ANS: There are `r young20` young rabbits (first age class) in the population at that time.**
+
+<br>
+<br>
+
+#### Q3: Plot-Total rabbit population variation after 20 years
+
+```{r sobel, warning=FALSE, message=FALSE}
+
+library(sensitivity)
+
+# survivability 
+
+nsample=200
+
+
+# create our two samples for Sobel
+# first do our survivability
+ps1 = cbind.data.frame(p12=runif(min=0.65, max=0.75, n=nsample), p23 = runif(min=0.75, max=0.8, n=nsample),
+                       p34 = runif(min=0.65, max=0.65, n=nsample), p45 = runif(min=0.1, max=0.1, n=nsample))
+
+fs1 = cbind.data.frame(f1 = runif(min=0, max=0, n=nsample), 
+                       f2 = runif(min=2, max=2, n=nsample),
+                       f3 = runif(min=6, max=6, n=nsample),
+                       f4 = runif(min=1, max=1, n=nsample))
+
+ps2 = cbind.data.frame(p12=runif(min=0.65, max=0.75, n=nsample), p23 = runif(min=0.75, max=0.8, n=nsample),
+                       p34 = runif(min=0.65, max=0.65, n=nsample), p45 = runif(min=0.1, max=0.1, n=nsample))
+
+fs2 = cbind.data.frame(f1 = runif(min=0, max=0, n=nsample), 
+                       f2 = runif(min=2, max=2, n=nsample),
+                       f3 = runif(min=6, max=6, n=nsample),
+                       f4 = runif(min=1, max=1, n=nsample))
+
+# put servivability and fertility together
+allp1 = cbind.data.frame(ps1,fs1)
+allp2 = cbind.data.frame(ps2,fs2)
+
+# get sobel samples
+sens_rabbit=soboljansen(model = NULL, allp1, allp2, nboot = 100)
+
+# head(sens_rabbit$X)
+nsim=nrow(sens_rabbit$X)
+
+# run model and save what we care about: final population after 20 years 
+
+ini = c(0,0,10, 0)
+nyears = 20
+
+# as before combine our application of the the dynamics model - for each
+# parameter set, with code to extract our metric of interest (final population)
+p_wrapper = function(p12, p23, p34, p45, f1,f2,f3,f4, use_func, initialpop, nstep ) {
+fertility=c(f1,f2,f3, f4)
+survivability= c(p12,p23,p34,p45)
+res = use_func(survivability =survivability, fertility = fertility, initialpop=initialpop, nstep=nstep)
+# now return the final population total
+return(finalpop=res$poptot[nstep])
+}
+
+# use pmap here so we can specify rows of our sensitivity analysis parameter object 
+res = as.data.frame(sens_rabbit$X) %>% pmap_dbl(p_wrapper, initialpop=ini, nstep=nyears, use_func=evolve_pop2)
+         
+# plot results (variation in final population across all parameter)
+ggplot(data.frame(finalpop=res), aes(x="", y=finalpop) )+geom_boxplot(fill="blue")+
+  theme(axis.title.x = element_blank())+labs(y="Total rabbit population after 20 years")
+
+```
+
+
+<br>
+<br>
+
+#### Q4: Plot-total rabbit population after 20 years varies with survivability of Young Age
+
+
+```{r}
+# give our results to sensitivity structure
+
+sens_rabbit=tell(sens_rabbit, res)
+
+# loot at results
+#sens_rabbit$S
+#sens_rabbit$T
+
+# graph the most sensitive parameter
+tmp = cbind.data.frame(sens_rabbit$X, pop20=sens_rabbit$y)
+ggplot(tmp, aes(p12, pop20))+geom_point()+labs(x="Survivability of young rabbit",y="pop after 20 years")
+```
+
+
+<br>
+<br>
+
+#### Q5: Plot-total rabbit population after 20 years varies with survivability of sub-adult
+
+
+```{r}
+
+tmp2 = cbind.data.frame(sens_rabbit$X, pop20=sens_rabbit$y)
+ggplot(tmp, aes(p23, pop20))+geom_point()+labs(x="Survivability of sub-adult rabbit",y="pop after 20 years")
+```
+
+
+<br>
+<br>
+
+#### D6: How does this compare with total rabbit population after 20 years in your original population model
+
+**ANS: The rabbit population decreases dramatically comparing to the original model, almost 1/4 of the original final population. **
+
+### End Assignment 7
