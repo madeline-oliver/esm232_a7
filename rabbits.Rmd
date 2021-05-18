@@ -1,7 +1,8 @@
 ---
 title: "rabbits"
 date: "5/18/2021"
-output: html_document
+output:
+  html_document: default
 ---
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -12,7 +13,7 @@ library(tidyverse)
 
 ```{r}
 
-source("evolve_pop2.R")
+source("evolve_pop2.R") # evolve_pop2 is updated version of function from Rachel
 
 
 # set up best guess case
